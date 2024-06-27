@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const scrapeData = require('./scrap.js');
+const scrapeData = require('./ndtv.js');
 const rewrite = require('./write.js');
 const twitterPost = require('./twitter.js');
 

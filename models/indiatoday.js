@@ -1,24 +1,29 @@
-const { MongoClient } = require('mongodb');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
+const rewrite = require('../controllers/write.js');
+const twitterPost = require('../controllers/twitter.js');
 
-
-const url = "https://www.ndtv.com/us-elections";
 const mongoURI = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 const collectionName = process.env.COLLECTION_NAME;
 
+const indiaTodayTitileClass = "#section .articles h2"; // Update with correct selector
+const indiaTodayContentClass = ".full-details p"; // Update with correct selector
+const indiaTodayImageClass = ".custom-caption img"; // Update with correct selector
+const categories = ["India", "News"];
 
+const url = 'https://indianexpress.com/section/india'; // Corrected the assignment operator
 
-async function scrapeData() {
+const scrapeIndianExpress = async () => {
   let client;
 
   try {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
-    const firstNewsHeading = $('.newsHdng').first();
+    const firstNewsHeading = $(indiaTodayTitileClass).first();
     const newsHeading = firstNewsHeading.text().trim();
     const newsLink = firstNewsHeading.find('a').attr('href');
 
@@ -28,8 +33,8 @@ async function scrapeData() {
 
     const { data: linkData } = await axios.get(newsLink);
     const link$ = cheerio.load(linkData);
-    const articleContent = link$('.ins_storybody p').text().trim();
-    const featuredImage = link$('.ins_instory_dv_cont img').first().attr('src');
+    const articleContent = link$(indiaTodayContentClass).text().trim();
+    const featuredImage = link$(indiaTodayImageClass).first().attr('src');
 
     client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
     await client.connect();
@@ -39,7 +44,7 @@ async function scrapeData() {
     const existingPost = await collection.findOne({ title: newsHeading });
     if (existingPost) {
       console.log('Post already stored');
-      return;
+      return false;
     }
 
     const result = await collection.insertOne({
@@ -49,18 +54,32 @@ async function scrapeData() {
       date: new Date(),
       rewrite: false,
       featuredImage: featuredImage || null,
+      categories: categories
     });
 
     console.log('Document inserted with _id:', result.insertedId);
+    return true;
+   
   } catch (error) {
     console.error('Error fetching and storing data:', error);
+    return false;
   } finally {
     if (client) {
       await client.close();
     }
   }
+};
+
+async function main() {
+  try {
+    const scrapeResult = await scrapeIndianExpress();
+    if (scrapeResult) {
+      await rewrite();
+      await twitterPost();
+    }
+  } catch (error) {
+    console.error('Error executing main function:', error);
+  }
 }
 
-scrapeData()
-
-module.exports = scrapeData;
+main();
