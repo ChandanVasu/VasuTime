@@ -1,21 +1,14 @@
 require('dotenv').config();
 
-const scrapeData = require('./ndtv.js');
-const rewrite = require('./write.js');
-const twitterPost = require('./twitter.js');
+const ndtvMain = require('./models/ndtv/ndtv.js');
+const indiaExpress = require('./models/indianexpress/indiaexpress.js');
 
-async function main() {
-  try {
-    await scrapeData();
-    await rewrite();
-    await twitterPost();
-  } catch (error) {
-    console.error('Error executing main function:', error);
-  }
-}
-
-// Call main immediately and then every 10 seconds
-main();
-setInterval(main, 10000);
-
-module.exports = main;
+(async () => {
+    try {
+        await ndtvMain();
+        await indiaExpress();
+        console.log('Both operations completed successfully.');
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+})();

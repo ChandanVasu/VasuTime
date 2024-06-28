@@ -1,29 +1,29 @@
-const { MongoClient } = require('mongodb');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
-const rewrite = require('./write.js');
-const twitterPost = require('./twitter.js');
-
-const url = "https://www.ndtv.com/world-news/";
+const rewrite = require('../../controllers/ai.js');
+const twitterPost = require('../../controllers/twitter.js');
 
 const mongoURI = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 const collectionName = process.env.COLLECTION_NAME;
 
-const ndtvTitileClass = ".newsHdng";
-const ndtvContentClass = ".ins_storybody p";
-const ndtvImageClass = ".ins_instory_dv_cont img";
-const categories = ["World", "elections"];
+const indiaTodayTitileClass = "#section .articles h2"; // Update with correct selector
+const indiaTodayContentClass = ".full-details p"; // Update with correct selector
+const indiaTodayImageClass = ".custom-caption img"; // Update with correct selector
+const categories = ["India", "News"];
 
-async function scrapeData() {
+const url = 'https://indianexpress.com/section/business/'; // Corrected the assignment operator
+
+const scrapeIndianExpress = async () => {
   let client;
 
   try {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
-    const firstNewsHeading = $(ndtvTitileClass).first();
+    const firstNewsHeading = $(indiaTodayTitileClass).first();
     const newsHeading = firstNewsHeading.text().trim();
     const newsLink = firstNewsHeading.find('a').attr('href');
 
@@ -33,10 +33,10 @@ async function scrapeData() {
 
     const { data: linkData } = await axios.get(newsLink);
     const link$ = cheerio.load(linkData);
-    const articleContent = link$(ndtvContentClass).text().trim();
-    const featuredImage = link$(ndtvImageClass).first().attr('src');
+    const articleContent = link$(indiaTodayContentClass).text().trim();
+    const featuredImage = link$(indiaTodayImageClass).first().attr('src');
 
-    client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+    client = new MongoClient(mongoURI);
     await client.connect();
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
@@ -59,7 +59,7 @@ async function scrapeData() {
 
     console.log('Document inserted with _id:', result.insertedId);
     return true;
-
+   
   } catch (error) {
     console.error('Error fetching and storing data:', error);
     return false;
@@ -68,11 +68,11 @@ async function scrapeData() {
       await client.close();
     }
   }
-}
+};
 
 async function main() {
   try {
-    const scrapeResult = await scrapeData();
+    const scrapeResult = await scrapeIndianExpress();
     if (scrapeResult) {
       await rewrite();
       await twitterPost();
@@ -82,5 +82,6 @@ async function main() {
   }
 }
 
-// Run main function after defining it
-main();
+// main();
+
+module.exports = main;

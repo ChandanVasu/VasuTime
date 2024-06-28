@@ -17,11 +17,11 @@ const mongoURI = process.env.MONGO_URI;
 const dbName = process.env.DB_NAME;
 const collectionName = process.env.TWIT_COLLECTION_NAME;
 
-async function postToTwitter() {
+const postToTwitter = async () => {
   let dbClient;
 
   try {
-    dbClient = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+    dbClient = new MongoClient(mongoURI);
     await dbClient.connect();
     const db = dbClient.db(dbName);
     const collection = db.collection(collectionName);
@@ -54,7 +54,7 @@ async function postToTwitter() {
       await dbClient.close();
     }
   }
-}
+};
 
 const textTweet = async (rwClient, content) => {
   try {
@@ -87,6 +87,6 @@ const mediaTweet = async (rwClient, content, imageUrl) => {
   }
 };
 
-postToTwitter();
+// postToTwitter();
 
 module.exports = postToTwitter;

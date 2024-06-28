@@ -20,7 +20,7 @@ async function generateContent() {
   let client;
 
   try {
-    client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+    client = new MongoClient(mongoURI);
     await client.connect();
     const db = client.db(dbName);
     const scrapeCollection = db.collection(scrapeCollectionName);
@@ -36,7 +36,7 @@ async function generateContent() {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
-      systemInstruction: 'You are tasked with rewriting a news article to ensure it is well-structured, engaging, and factual. Craft a concise and informative title that captures the essence of the story. Your detailed content should provide comprehensive information, covering the main points succinctly and accurately. Additionally, create a condensed version suitable for Twitter, incorporating relevant emojis to enhance engagement and only 260 Characters.',
+      systemInstruction: 'You are tasked with rewriting a news article to ensure it is well-structured, engaging, and factual. Craft a concise and informative title that captures the essence of the story. Your detailed content should provide comprehensive information, covering the main points succinctly and accurately. Additionally, create a condensed version suitable for Twitter, incorporating relevant emojis to enhance engagement and only 260 twit text Characters.',
     });
 
     const chatSession = model.startChat({ generationConfig });
